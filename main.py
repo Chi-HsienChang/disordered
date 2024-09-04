@@ -26,9 +26,41 @@ def save_proportions_to_file(pair_counts, output_filename):
             proportion = count*100 / total_pairs
             file.write(f"{pair}: {proportion:.6f}\n")
 
+
+
+import pandas as pd
+
+# File paths
+fasta_file_path = 'aligned_real.fasta'
+tsv_file_path = 'LUC7p_species_phylogeny.tsv'
+
+# Read the TSV file containing taxID and Named Lineage
+tsv_df = pd.read_csv(tsv_file_path, sep='\t')
+# Create a dictionary to map taxID to Named Lineage
+taxid_to_lineage = {str(row['Taxid']): row['Named Lineage'] for index, row in tsv_df.iterrows()}
+
+# Initialize a dictionary to hold the mapping from FASTA name to Named Lineage
+name_to_clade = {}
+# name_to_taxID = {}
+
+# Process the FASTA file
+with open(fasta_file_path, 'r') as fasta_file:
+    for line in fasta_file:
+        line = line.strip()
+        if line.startswith('>'):
+            # Extract the identifier and remove the leading '>'
+            identifier = line[1:]  # Remove '>' from the start of the header
+            parts = identifier.split('|')
+            name = parts[0]  # Assume the first part of the header is the name, now cleaned of '>'
+            taxID = parts[-1].split(':')[-1]  # Extract taxID from the last part
+            # Retrieve the Named Lineage using taxID
+            named_lineage = taxid_to_lineage.get(taxID, 'NA,NA,NA,NA,NA')
+            # Map the name to its corresponding Named Lineage
+            name_to_clade[name] = named_lineage.split(',')[3]
+            # name_to_taxID[name] = taxID
+
 # Read the FASTA file
 sequence = read_fasta('aligned_real.fasta')
-
 # Count the pairs
 pair_counts = count_amino_acid_pairs(sequence)
 
